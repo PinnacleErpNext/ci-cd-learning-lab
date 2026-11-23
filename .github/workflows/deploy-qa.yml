@@ -1,0 +1,48 @@
+name: QA Deployment (Simulation)
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-qa:
+    name: Deploy to QA (simulated)
+    runs-on: ubuntu-latest
+    environment:
+      name: qa
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Create release package
+        run: |
+          mkdir -p package
+          cp -R src tests pyproject.toml package/
+          printf "Commit: %s\n" "$GITHUB_SHA" > package/DEPLOYMENT.txt
+          printf "Environment: QA (simulation)\n" >> package/DEPLOYMENT.txt
+          tar -czf qa-release.tar.gz package
+
+      - name: Upload QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-release-${{ github.sha }}
+          path: qa-release.tar.gz
+          retention-days: 14
+
+      - name: Record simulated deployment
+        run: |
+          {
+            echo "## QA deployment simulation"
+            echo "- Result: successful"
+            echo "- Branch: develop"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- No external server was contacted."
+          } >> "$GITHUB_STEP_SUMMARY"

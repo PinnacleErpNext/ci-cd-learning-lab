@@ -1,0 +1,48 @@
+name: Production Deployment (Simulation)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    name: Deploy to Production (simulated)
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Create release package
+        run: |
+          mkdir -p package
+          cp -R src tests pyproject.toml package/
+          printf "Commit: %s\n" "$GITHUB_SHA" > package/DEPLOYMENT.txt
+          printf "Environment: Production (simulation)\n" >> package/DEPLOYMENT.txt
+          tar -czf production-release.tar.gz package
+
+      - name: Upload production artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-release-${{ github.sha }}
+          path: production-release.tar.gz
+          retention-days: 30
+
+      - name: Record simulated deployment
+        run: |
+          {
+            echo "## Production deployment simulation"
+            echo "- Result: successful"
+            echo "- Branch: main"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- No external server was contacted."
+          } >> "$GITHUB_STEP_SUMMARY"
