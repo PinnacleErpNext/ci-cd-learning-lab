@@ -1,5 +1,6 @@
 """Small business rules used to demonstrate automated testing."""
 
+
 def calculate_discount(amount: float, customer_type: str) -> float:
     """Return the discount amount for a supported customer type."""
     if amount < 0:
